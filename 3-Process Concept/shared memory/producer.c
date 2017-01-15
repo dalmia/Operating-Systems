@@ -35,5 +35,5 @@ void *ptr;
     sprintf(ptr, "%s", message_1);
     ptr += strlen(message_1);
 
-     return 0;
+    return 0;
 }
