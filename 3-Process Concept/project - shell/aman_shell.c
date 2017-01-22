@@ -1,11 +1,19 @@
 #include <sys/types.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <string.h>
 #include <stdlib.h>
 
+typedef int bool;
+
+#define true 1
+#define false 0
 #define LSH_RL_BUFSIZE 1024 /* buffer size for reading user input */
 #define LSH_TOK_BUFSIZE 64
 #define LSH_TOK_DELIM " \t\r\n\a"
+
+/* global variable to check parent and child process concurrency */
+bool conc = false;
 
 /* Function declarations for built-in shell commands */
 int lsh_cd(char **args);
@@ -46,7 +54,7 @@ int lsh_cd(char **args)
 int lsh_help(char **args)
 {
     int i;
-    printf("Aman Dalmia's LSH\n", );
+    printf("Aman Dalmia's LSH\n");
     printf("Type program names and arguments, and press enter\n");
     printf("The following are built in:\n");
 
@@ -73,13 +81,16 @@ int lsh_launch(char **args){
         if(execvp(args[0], args) == -1) perror("lsh");
         exit(EXIT_FAILURE);
     }else if(pid > 0){ /* parent process */
-        do{
-            wpid =  waitpid(pid, &status, WUNTRACED);
-        }while(!WIFEXITED(status) && !WIFSIGNALED(status));
+        if(!conc){
+            do{
+                wpid =  waitpid(pid, &status, WUNTRACED);
+            }while(!WIFEXITED(status) && !WIFSIGNALED(status));
+        }
     }else{ /* error forking */
         perror("lsh");
     }
 
+    conc = false;
     return 1;
 }
 
@@ -102,7 +113,7 @@ int lsh_execute(char **args){
 
 /* Parse input to get the arguments */
 char **lsh_split_line(char *line){
-    int bufsize = LSH_TOK_DELIM, position = 0;
+    int bufsize = LSH_TOK_BUFSIZE, position = 0;
     char **tokens = malloc(bufsize * sizeof(char*));
     char *token;
 
@@ -127,6 +138,10 @@ char **lsh_split_line(char *line){
 
         token = strtok(NULL, LSH_TOK_DELIM);
     }
+    if(strcmp(tokens[position - 1], "&") == 0) {
+        conc = true;
+        tokens[position - 1] = NULL;
+    }
     tokens[position] = NULL;
     return tokens;
 }
@@ -146,7 +161,7 @@ char *lsh_read_line(void)
 
     while(1){
         /* Read a character */
-        c = getchar()
+        c = getchar();
 
         if(c == EOF || c == '\n'){
             buffer[position] = '\0';
@@ -178,8 +193,8 @@ void lsh_loop(void)
     do {
         printf(">");
         line = lsh_read_line();
-        args = lsh_split_line();
-        status = lsh_execute(line);
+        args = lsh_split_line(line);
+        status = lsh_execute(args);
 
         free(line);
         free(args);
