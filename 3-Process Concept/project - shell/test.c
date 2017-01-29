@@ -1,16 +1,22 @@
+#include <sys/types.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdlib.h>
 
 int main(void)
 {
-    int p1[10];
-    int *p2[10];
-    int (*p3)[10];
-
-    printf("sizeof(int)   = %d\n", (int)sizeof(int));
-    printf("sizeof(int *) = %d\n", (int)sizeof(int *));
-    printf("sizeof(p1)    = %d\n", (int)sizeof(p1));
-    printf("sizeof(p2)    = %d\n", (int)sizeof(p2));
-    printf("sizeof(p3)    = %d\n", (int)sizeof(p3));
+    char *v = "Aman";
+    char *v2 = "Aan";
+    char **c = malloc(2*sizeof(char*));
+    char ***a = malloc(sizeof(char**));
+    *c = v;
+    c++;
+    *c = v2;
+    c--;
+    printf("%s\n", *c);
+    c++;
+    printf("%s\n", *c);
 
     return 0;
 }
